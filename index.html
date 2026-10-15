@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Control de Gastos - PMV</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-indigo-700 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div>
+                <h1 class="text-2xl font-bold">Control de Gastos y Obligaciones</h1>
+                <p class="text-indigo-200 text-sm">PMV Funcional - Registro Manual de Pagos</p>
+            </div>
+            <!-- Pestañas de Navegación por Roles -->
+            <div class="bg-indigo-800 p-1 rounded-lg flex gap-1">
+                <button onclick="cambiarVista('asistente')" id="btn-asistente" class="px-4 py-2 rounded-md font-medium text-sm transition bg-white text-indigo-700 shadow">Vista Asistente</button>
+                <button onclick="cambiarVista('gerente')" id="btn-gerente" class="px-4 py-2 rounded-md font-medium text-sm transition text-indigo-200 hover:text-white">Vista Gerente</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 py-8 flex-grow w-full">
+
+        <!-- ================= VISTA ASISTENTE ================= -->
+        <div id="vista-asistente" class="space-y-8">
+            <!-- Formulario de Registro / Edición (HU-01 y HU-05) -->
+            <section class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <h2 id="form-titulo" class="text-lg font-bold text-slate-900 mb-4">Registrar Nuevo Gasto</h2>
+                <form id="form-gasto" onsubmit="guardarGasto(event)" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                    <input type="hidden" id="gasto-id">
+                    
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Descripción *</label>
+                        <input type="text" id="descripcion" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Ej. Alquiler de oficina">
+                    </div>
+
+                    <div class="md:col-span-1">
+                        <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Proveedor / Beneficiario</label>
+                        <input type="text" id="proveedor" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Ej. Inmobiliaria SAC">
+                    </div>
+
+                    <div class="md:col-span-1">
+                        <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Categoría</label>
+                        <select id="categoria" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
+                            <option value="Servicios">Servicios</option>
+                            <option value="Proveedores">Proveedores</option>
+                            <option value="Préstamos">Préstamos</option>
+                            <option value="Impuestos">Impuestos</option>
+                            <option value="Otros">Otros</option>
+                        </select>
+                    </div>
+
+                    <div class="md:col-span-1">
+                        <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Monto ($) *</label>
+                        <input type="number" step="0.01" min="0.01" id="monto" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="0.00">
+                    </div>
+
+                    <div class="md:col-span-1">
+                        <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Fecha Vencimiento *</label>
+                        <input type="date" id="vencimiento" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+
+                    <div class="md:col-span-full flex justify-end gap-2 pt-2">
+                        <button type="button" id="btn-cancelar-edicion" onclick="cancelarEdicion()" class="hidden px-4 py-2 bg-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-300 transition">Cancelar Edición</button>
+                        <button type="submit" id="btn-submit-gasto" class="px-6 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition shadow-sm">Guardar Gasto</button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Sección de Listado, Búsqueda y Filtros (HU-02, HU-03, HU-04, HU-06) -->
+            <section class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-4">
+                <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                    <h2 class="text-lg font-bold text-slate-900">Listado de Obligaciones</h2>
+                    
+                    <!-- Filtros y Búsqueda (HU-06) -->
+                    <div class="flex flex-wrap gap-2 w-full md:w-auto">
+                        <input type="text" id="input-buscar" oninput="filtrarGastos()" placeholder="Buscar descripción o proveedor..." class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none flex-grow md:w-64">
+                        
+                        <select id="filtro-estado" onchange="filtrarGastos()" class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
+                            <option value="TODOS">Todos los estados</option>
+                            <option value="Pendiente">Pendientes</option>
+                            <option value="Vencido">Vencidos</option>
+                            <option value="Pagado">Pagados</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Tabla de Gastos -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-slate-200 text-xs uppercase text-slate-500 bg-slate-50">
+                                <th class="p-3">Estado</th>
+                                <th class="p-3">Descripción</th>
+                                <th class="p-3">Proveedor</th>
+                                <th class="p-3">Categoría</th>
+                                <th class="p-3">Vencimiento</th>
+                                <th class="p-3">Monto</th>
+                                <th class="p-3 text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-gastos-body" class="divide-y divide-slate-100 text-sm">
+                            <!-- Los registros se inyectan dinámicamente mediante JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <!-- ================= VISTA GERENTE ================= -->
+        <div id="vista-gerente" class="space-y-6 hidden">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-center gap-4">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-900">Resumen Financiero Mensual</h2>
+                    <p class="text-sm text-slate-500">Seleccione el mes a consultar</p>
+                </div>
+                <div>
+                    <input type="month" id="selector-mes" onchange="actualizarResumenGerente()" class="border border-slate-300 rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
+                </div>
+            </div>
+
+            <!-- Tarjetas de Resumen (HU-07) -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-indigo-600">
+                    <p class="text-xs uppercase font-bold text-slate-400">Total Registrado</p>
+                    <p id="gerente-total" class="text-2xl font-extrabold text-slate-800 mt-1">$0.00</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-amber-500">
+                    <p class="text-xs uppercase font-bold text-slate-400">Total Pendiente</p>
+                    <p id="gerente-pendiente" class="text-2xl font-extrabold text-amber-600 mt-1">$0.00</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-rose-600">
+                    <p class="text-xs uppercase font-bold text-slate-400">Total Vencido</p>
+                    <p id="gerente-vencido" class="text-2xl font-extrabold text-rose-600 mt-1">$0.00</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-emerald-600">
+                    <p class="text-xs uppercase font-bold text-slate-400">Total Pagado</p>
+                    <p id="gerente-pagado" class="text-2xl font-extrabold text-emerald-600 mt-1">$0.00</p>
+                </div>
+            </div>
+
+            <!-- Detalle por Estado para el Gerente -->
+            <section class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-4">
+                <h3 class="font-bold text-slate-800">Detalle de Obligaciones del Periodo</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-slate-200 text-xs uppercase text-slate-500 bg-slate-50">
+                                <th class="p-3">Estado</th>
+                                <th class="p-3">Descripción</th>
+                                <th class="p-3">Proveedor</th>
+                                <th class="p-3">Vencimiento</th>
+                                <th class="p-3">Monto</th>
+                                <th class="p-3">Fecha de Pago</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-gerente-body" class="divide-y divide-slate-100 text-sm">
+                            <!-- Inyectado por JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+    </main>
+
+    <!-- Modal para Registrar Pago Manual (HU-04) -->
+    <div id="modal-pago" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-lg max-w-md w-full p-6 space-y-4">
+            <h3 class="text-lg font-bold text-slate-900">Registrar Pago Realizado</h3>
+            <p class="text-sm text-slate-500">Indique la fecha en la que se efectuó el pago fuera del sistema:</p>
+            <input type="hidden" id="pago-gasto-id">
+            <div>
+                <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Fecha de Pago *</label>
+                <input type="date" id="fecha-pago-input" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+                <button onclick="cerrarModalPago()" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-300 transition">Cancelar</button>
+                <button onclick="confirmarPago()" class="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition">Confirmar Pago</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-400">
+        Sistema de Control de Gastos — PMV Académico
+    </footer>
+
+    <!-- Archivo JavaScript principal -->
+    <script src="js/app.js"></script>
+</body>
+</html>
